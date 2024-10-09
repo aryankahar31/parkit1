@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Parking Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Load React and Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body>
+  <div id="root" class="p-6 max-w-4xl mx-auto"></div>
+
+  <script type="text/babel">
+    // Sample parking spot data
+    const initialSpots = Array(12).fill(null).map((_, index) => ({
+      id: index + 1,
+      isOccupied: false,
+      vehicle: null,
+      startTime: null,
+    }));
+
+    const hourlyRate = 5; // $5 per hour
+
+    function App() {
+      const [parkingSpots, setParkingSpots] = React.useState(initialSpots);
+      const [selectedSpot, setSelectedSpot] = React.useState(null);
+      const [vehicleNumber, setVehicleNumber] = React.useState('');
+
+      const handleSpotClick = (spot) => {
+        if (!spot.isOccupied) {
+          setSelectedSpot(spot);
+        }
+      };
+
+      const handlePark = () => {
+        if (selectedSpot && vehicleNumber) {
+          setParkingSpots(spots =>
+            spots.map(spot =>
+              spot.id === selectedSpot.id
+                ? {
+                    ...spot,
+                    isOccupied: true,
+                    vehicle: vehicleNumber,
+                    startTime: new Date(),
+                  }
+                : spot
+            )
+          );
+          setSelectedSpot(null);
+          setVehicleNumber('');
+        }
+      };
+
+      const handleExit = (spotId, event) => {
+        event.stopPropagation();
+        setParkingSpots(spots =>
+          spots.map(spot =>
+            spot.id === spotId
+              ? {
+                  ...spot,
+                  isOccupied: false,
+                  vehicle: null,
+                  startTime: null,
+                }
+              : spot
+          )
+        );
+      };
+
+      const calculateFee = (startTime) => {
+        if (!startTime) return 0;
+        const hours = Math.ceil((new Date() - new Date(startTime)) / (1000 * 60 * 60));
+        return hours * hourlyRate;
+      };
+
+      return (
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-center mb-8 text-blue-600">
+              Smart Parking Management
+            </h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {parkingSpots.map(spot => (
+                <div
+                  key={spot.id}
+                  onClick={() => handleSpotClick(spot)}
+                  className={`p-4 rounded-lg border-2 cursor-pointer text-center transition-all duration-200
+                    ${spot.isOccupied
+                      ? 'bg-red-100 border-red-500'
+                      : 'bg-green-100 border-green-500 hover:bg-green-200'}`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="text-2xl">
+                      {spot.isOccupied ? '🚗' : '🅿️'}
+                    </div>
+                    <div className="font-semibold">Spot {spot.id}</div>
+                    {spot.isOccupied && (
+                      <div className="text-sm">
+                        <div className="font-medium">{spot.vehicle}</div>
+                        <div className="flex items-center gap-1 justify-center text-gray-600">
+                          <span>🕒</span>
+                          <span>${calculateFee(spot.startTime)}</span>
+                        </div>
+                        <button
+                          onClick={(e) => handleExit(spot.id, e)}
+                          className="mt-2 bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-full text-sm transition-colors duration-200"
+                        >
+                          Exit
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {selectedSpot && (
+              <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+                <div className="text-lg font-semibold text-blue-700 mb-3">
+                  Book Spot {selectedSpot.id}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <input
+                    type="text"
+                    value={vehicleNumber}
+                    onChange={(e) => setVehicleNumber(e.target.value)}
+                    placeholder="Enter vehicle number"
+                    className="border rounded-lg p-2 flex-1 w-full"
+                  />
+                  <button
+                    onClick={handlePark}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 w-full sm:w-auto"
+                  >
+                    Park Vehicle
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex gap-6 justify-center">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-100 border border-green-500 rounded"></div>
+                <span className="text-gray-600">Available</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-red-100 border border-red-500 rounded"></div>
+                <span className="text-gray-600">Occupied</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+            <div className="font-semibold flex flex-row items-center gap-2 text-gray-700">
+              <span className="text-xl">💰</span>
+              Parking Rates
+            </div>
+            <div className="mt-2 text-gray-600">
+              <p>${hourlyRate}/hour</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
